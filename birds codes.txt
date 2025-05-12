@@ -1,0 +1,46 @@
+import pandas as pd
+
+# Load the Excel file
+file_path = "/content/Bird_Monitoring_Data_FOREST.XLSX"
+xls = pd.ExcelFile(file_path)
+
+# Check sheet names
+print("Sheet Names:", xls.sheet_names)
+
+# Load the first sheet (adjust name if needed)
+df = xls.parse(xls.sheet_names[0])
+
+# Display first few rows
+print(df.head())
+
+# -------------------------------
+# Data Cleaning Steps
+# -------------------------------
+
+# 1. Drop fully empty rows and columns
+df.dropna(how='all', inplace=True)
+df.dropna(axis=1, how='all', inplace=True)
+
+# 2. Standardize column names
+df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+
+# 3. Drop duplicates if any
+df.drop_duplicates(inplace=True)
+
+# 4. Convert date columns to datetime format (adjust column name as needed)
+if 'date' in df.columns:
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+
+# 5. Remove rows with missing critical values (e.g., species name or location)
+critical_cols = ['species_name', 'location', 'date']
+df.dropna(subset=[col for col in critical_cols if col in df.columns], inplace=True)
+
+# 6. Strip whitespace from all object columns (safely convert to string first)
+for col in df.select_dtypes(include='object'):
+    df[col] = df[col].astype(str).str.strip()
+
+# -------------------------------
+# Export Cleaned Data
+# -------------------------------
+df.to_csv("cleaned_bird_monitoring_data.csv", index=False)
+print("✅ Cleaned data saved as 'cleaned_bird_monitoring_data.csv'")
